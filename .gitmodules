@@ -1,0 +1,3 @@
+[submodule "lib/saloon"]
+	path = lib/saloon
+	url = git@github.com:MCApollo/homebrew-iOS-idea.git
