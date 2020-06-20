@@ -1,2 +1,14 @@
 #!/usr/bin/env bash
 # Homebrew to 'our' buildsystem script.
+
+DALTON_ROOT=$(
+  bin="$(dirname $(realpath ${0}))"
+  submodule="saloon"
+  printf -- '%s' "$(dirname ${bin})/lib/${submodule}"
+)
+
+parse(){
+  "${DALTON_ROOT}"/bin/parser.rb "$@"
+}
+
+parse "$@"
