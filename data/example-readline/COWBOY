@@ -1,0 +1,56 @@
+#!/hint/bash
+# example goal file
+
+# these functions will export the variables they are named as
+# ex. version "1.0.0" will export version=1.0.0 in its function
+
+name "longname" "package-name"
+desc "short-desc" \
+  "I'm the long description" \
+  "I can deal with newlines in the" \
+  "Amount of text and maybe even heredocs" \
+  "This also could be a file named COWBOY.description"
+# desc --url "http://cydia.descrip.com/foo"
+version "main-version" "+ patch-level"
+homepage "https://example.com"
+download "https://example.com/foobar-${version}.tar.gz" \
+  "http://example.foobar.com/baz.diff"
+# XXX: if test -f $(basename ${url}); then use that
+# options that affect the default behavior
+options --do-extract false --do-patch 0 \
+  --skip-checksum yes
+
+icon "https://path/to/online/"
+
+# XXX: name, desc, version will have a COWBOY.${var} that can be used instead
+#   for things like auto-updaters, just supply --use-file to these functions
+
+# unlike in makepkg, the default is to extract the first tar and
+#   auto-cd into that dir, bail on error if that fails.
+# prepare is not required
+prepare(){
+  :
+  # do prepare stuff here like pre-compiling for host
+  # could call a function from build.d
+}
+
+# to keep true to elucubratus, build should be allowed to install into
+#   the dest_dir, allowing for importing of make.sh
+#
+build(){
+  :
+}
+
+packge(){
+  :
+  # install whatever, your pwd is where build() left off
+}
+
+# create sub-packages, the buildsystem will create a new dest_dir for you
+#   named: ${package-name}-${function-suffix}
+package_dev(){
+  :
+  # install whatever, your pwd is where build() left off
+}
+# XXX: handle sub-depends in /stat directory, keep track when depending
+#   on a package, append compiler env to point to all sub-packages

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# environemnt
+unset CDPATH
+unset GREP_OPTIONS
+
+# functions
+usage(){
+  printf -- "blah blah\n"
+  echo ####
+  printf -- "blah balh\n"
+}
+
+# do_fakeroot() { }
+
+# option parse
+long_options=()
+short_option=()
+
+ARGV=(${@})
+# set -- $(parseopts ${@})
+
+while (( $# )); do
+  case "${1}" in
+    --foo) echo foo ;;
+  esac
+  shift
+done
+
+# trap
+# do_cleanup() { }
+
+# build
