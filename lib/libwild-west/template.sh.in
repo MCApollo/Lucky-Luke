@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#
+#     : 
+#
+
+[[ -n "${LIBWILDWEST_ _ _SH}" ]] && return
+export LIBWILDWEST_ _ _SH=1
+: ${LIBWILDWEST?}
