@@ -52,7 +52,7 @@ for color in ${_message_list[@]}; do
   declare -r "_message_"${color}
 done; unset color
 
-ohai(){
+msg(){
   local title="${_message_bold}${_message_white}${1}"
   local msg="${_message_dim}${_message_bold}${_message_underline}${2}"
   local color
@@ -68,7 +68,7 @@ ohai(){
   fi
 }
 
-oline(){
+msgline(){
   local cols="$(tput cols)"
   if [[ -t 1 ]]; then
     local color="${1}"
@@ -81,7 +81,7 @@ oline(){
   printf -- "${color}%${cols}s${_message_reset}\n"
 }
 
-ofail(){
+error(){
   local msg="${_message_bold}${1}"
   local err="${2:-1}"
   local prefix="${_message_bold}${_message_red}|!|${_message_reset}"

@@ -1,33 +1,124 @@
 #!/usr/bin/env bash
+#
+#   Lucky Luke - makepkg-based fork for dpkg-based iOS-apple-darwin
+#
+#   ** "LUCKY LUKE" **
+#   Copyright (C) 2020 by Mac C. <MCApollo@protonmail.com>
+#
+#   ** "MAKEPKG" **
+#   Copyright (c) 2006-2020 Pacman Development Team <pacman-dev@archlinux.org>
+#   Copyright (c) 2002-2006 by Judd Vinet <jvinet@zeroflux.org>
+#   Copyright (c) 2005 by Aurelien Foret <orelien@chez.com>
+#   Copyright (c) 2006 by Miklos Vajna <vmiklos@frugalware.org>
+#   Copyright (c) 2005 by Christian Hamar <krics@linuxforum.hu>
+#   Copyright (c) 2006 by Alex Smith <alex@alex-smith.me.uk>
+#   Copyright (c) 2006 by Andras Voroskoi <voroskoi@frugalware.org>
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 
 # environemnt
 unset CDPATH
 unset GREP_OPTIONS
 
+declare -rx PKG_ROOT=$(
+  basepath="$(dirname $(realpath ${BASH_SOURCE[0]}))"
+  printf -- '%s' "$(dirname ${basepath})"
+)
+
+declare -r libdir="${PKG_ROOT}/lib"
+declare -r confdir="${PKG_ROOT}/conf"
+declare -r libname='libwild-west'
+declare -r version='1.0.0'
+declare -r BUILDSCRIPT='COWBOY'
+
+if ! . "${libdir}/${libname}.sh"; then
+  printf -- 'ERROR: (%s): does %s exist?\n'  \
+    "${0##*/}" "${libdir}"
+  exit 127
+fi
+
+# Options
+INFAKEROOT=0
+
 # functions
 usage(){
-  printf -- "blah blah\n"
+  printf -- 'Jolly (Lucky Luke) -- %s\n' "${version}"
+  printf -- 'Fork of makepkg for a dpkg-based buildsystem.\n'
   echo ####
-  printf -- "blah balh\n"
+  printf -- ' -h, --help      Show this help text and exit\n'
+  printf -- ' -V, --version   Show version and exit\n'
+  echo ####
 }
 
-# do_fakeroot() { }
+version(){
+  printf -- '%s -- %s\n' "${0##*/}" "${version}"
+  cat << EOF
+  This is free software; see the source for copying conditions.
+  There is NO WARRANTY, to the extent permitted by law.
+EOF
+}
 
-# option parse
-long_options=()
-short_option=()
+# do_cleanup() { }
+
+enter_fakeroot(){
+  msgline 200
+  fakeroot -- bash -$- "${BASH_SOURCE[0]}" -F "${ARGLIST[@]}" || exit $?
+}
+
+###
+### PROGRAM START
+###
+
+umask 0022
 
 ARGV=(${@})
-# set -- $(parseopts ${@})
+OPT_SHORT="fFhV"
+OPT_LONG=('foo'
+          'help' 'version')
+
+if ! parseopts "${OPT_SHORT}" "${OPT_LONG[@]}" -- "$@"; then
+  exit ${E_INVALID_OPTiON}
+fi
+set -- "${OPTRET[@]}"
+unset OPT_SHORT OPT_LONG OPTRET
 
 while (( $# )); do
   case "${1}" in
-    --foo) echo foo ;;
+    --foo)  echo foo ;;
+
+    # - Help
+    -h|--help) usage; exit ${E_OK} ;;
+    -V|--version) version; exit ${E_OK} ;;
+    # - Private
+    -F)     INFAKEROOT=1 ;;
+
+    --)     shift; break ;;
   esac
   shift
 done
 
-# trap
-# do_cleanup() { }
+# attempt to consume any extra argv as environment variables. this supports
+# overriding (e.g. CC=clang) as well as overriding (e.g. CFLAGS+=' -g').
+extra_environment=()
+while [[ $1 ]]; do
+	if [[ $1 = [_[:alpha:]]*([[:alnum:]_])?(+)=* ]]; then
+		extra_environment+=("$1")
+	fi
+	shift
+done
 
-# build
+if (( ${#extra_environment[*]} )); then
+	export "${extra_environment[@]}"
+fi
