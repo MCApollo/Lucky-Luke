@@ -1,91 +1,87 @@
 #!/usr/bin/env bash
 #
-#   message.sh - colorful colors
+#   message.sh - functions for outputting messages in makepkg
+#
+#   Copyright (c) 2006-2020 Pacman Development Team <pacman-dev@archlinux.org>
+#   Copyright (c) 2002-2006 by Judd Vinet <jvinet@zeroflux.org>
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-[[ -n "${LIBWILDWEST_UTIL_MESSAGE_SH}" ]] && return
-export LIBWILDWEST_UTIL_MESSAGE_SH=1
-: ${LIBWILDWEST?}
+[[ -n "$LIBMAKEPKG_UTIL_MESSAGE_SH" ]] && return
+LIBMAKEPKG_UTIL_MESSAGE_SH=1
 
-if [[ -t 1 ]]; then
-  _message_black="$(tput setaf 0)"
-  _message_red="$(tput setaf 1)"
-  _message_green="$(tput setaf 2)"
-  _message_yellow="$(tput setaf 3)"
-  _message_blue="$(tput setaf 4)"
-  _message_magenta="$(tput setaf 5)"
-  _message_cyan="$(tput setaf 6)"
-  _message_white="$(tput setaf 7)"
 
-  _message_white_b="$(tput setab 7)"
-  _message_cyan_b="$(tput setab 6)"
-  _message_gray_b="$(tput setab 240)"
-
-  _message_bold="$(tput bold)"
-  _message_underline="$(tput smul)"
-  _message_dim="$(tput dim)"
-
-  _message_reset="$(tput sgr0)"
-else
-  _message_black=""
-  _message_red=""
-  _message_green=""
-  _message_yellow=""
-  _message_blue=""
-  _message_magenta=""
-  _message_cyan=""
-  _message_white=""
-  _message_bold=""
-  _message_underline=""
-  _message_dim=""
-  _message_reset=""
-fi
-
-_message_arrow_b="${message_bold}${_message_blue}==>${_message_reset}"
-_message_arrow_g="${message_bold}${_message_green}==>${_message_reset}"
-
-_message_list=(black red green yellow blue magenta cyan white
-               white_b cyan_b
-               bold underline dim reset arrow_b arrow_gs)
-
-for color in ${_message_list[@]}; do
-  declare -r "_message_"${color}
-done; unset color
-
-msg(){
-  local title="${_message_bold}${_message_white}${1}"
-  local msg="${_message_dim}${_message_bold}${_message_underline}${2}"
-  local color
-  if [[ -n "${3}" ]]; then
-    color="${message_bold}$(tput setaf ${3})==>${_message_reset}"
-  else
-    color="${_message_arrow_b}"
-  fi
-
-  printf -- '%s %s %s\n' "${color}" "${title}" "${_message_reset}"
-  if [[ -n "${2}" && "${2}" != '_' ]]; then
-    printf -- '    %s %s %s\n' "${msg_fmt}" "${msg}" "${_message_reset}"
-  fi
+colorize() {
+	# prefer terminal safe colored and bold text when tput is supported
+	if tput setaf 0 &>/dev/null; then
+		ALL_OFF="$(tput sgr0)"
+		BOLD="$(tput bold)"
+		BLUE="${BOLD}$(tput setaf 4)"
+		GREEN="${BOLD}$(tput setaf 2)"
+		RED="${BOLD}$(tput setaf 1)"
+		YELLOW="${BOLD}$(tput setaf 3)"
+	else
+		ALL_OFF="\e[0m"
+		BOLD="\e[1m"
+		BLUE="${BOLD}\e[34m"
+		GREEN="${BOLD}\e[32m"
+		RED="${BOLD}\e[31m"
+		YELLOW="${BOLD}\e[33m"
+	fi
+	readonly ALL_OFF BOLD BLUE GREEN RED YELLOW
 }
 
-msgline(){
-  local cols="$(tput cols)"
-  if [[ -t 1 ]]; then
-    local color="${1}"
-    [[ -n "${color}" ]] && \
-      color="$(tput setab ${color})"; color="${color:-${_message_gray_b}}"
-  else
-    local color=""
-  fi
+[[ -t 2 ]] && colorize
 
-  printf -- "${color}%${cols}s${_message_reset}\n"
+# plainerr/plainerr are primarily used to continue a previous message on a new
+# line, depending on whether the first line is a regular message or an error
+# output
+
+plain() {
+	(( QUIET )) && return
+	local mesg=$1; shift
+	printf "${BOLD}    ${mesg}${ALL_OFF}\n" "$@"
 }
 
-error(){
-  local msg="${_message_bold}${1}"
-  local err="${2:-1}"
-  local prefix="${_message_bold}${_message_red}|!|${_message_reset}"
+plainerr() {
+	plain "$@" >&2
+}
 
-  printf -- '%s %s %s\n' "${prefix}" "${msg}" "${_message_reset}"
-  exit ${err}
+msg() {
+	(( QUIET )) && return
+	local mesg=$1; shift
+	printf "${GREEN}==>${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@"
+}
+
+msg2() {
+	(( QUIET )) && return
+	local mesg=$1; shift
+	printf "${BLUE}  ->${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@"
+}
+
+ask() {
+	local mesg=$1; shift
+	printf "${BLUE}::${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}" "$@"
+}
+
+warning() {
+	local mesg=$1; shift
+	printf "${YELLOW}==> WARNING:${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
+}
+
+error() {
+	local mesg=$1; shift
+	printf "${RED}==> ERROR:${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
 }
