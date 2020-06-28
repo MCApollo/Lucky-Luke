@@ -21,7 +21,7 @@
 
 [[ -n "$LIBMAKEPKG_UTIL_MESSAGE_SH" ]] && return
 LIBMAKEPKG_UTIL_MESSAGE_SH=1
-
+: ${LIBWILDWEST?}
 
 colorize() {
 	# prefer terminal safe colored and bold text when tput is supported
@@ -69,6 +69,13 @@ msg2() {
 	(( QUIET )) && return
 	local mesg=$1; shift
 	printf "${BLUE}  ->${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@"
+}
+
+debug() {
+	(( ! DEBUG )) && return
+	local mesg=$1; shift
+	local who=${FUNCNAME[2]:-'main'}
+	printf "${RED}(DEBUG|${who})${ALL_OFF}:${BOLD} ${mesg}${ALL_OFF}\n" "$@"
 }
 
 ask() {

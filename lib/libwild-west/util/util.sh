@@ -20,3 +20,27 @@ in_array() {
 	done
 	return 1 # Not Found
 }
+
+# tests if a variable is an array
+is_array() {
+	local v=$1
+	local ret=1
+
+	if [[ ${!v@a} = *a* ]]; then
+		ret=0
+	fi
+
+	return $ret
+}
+
+# test if a variable is an associative array
+is_associative() {
+	local v=$1
+	local ret=1
+
+	if [[ ${!v@a} = *A* ]]; then
+		ret=0
+	fi
+
+	return $ret
+}

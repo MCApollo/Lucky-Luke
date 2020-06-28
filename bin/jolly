@@ -40,7 +40,7 @@ declare -rx PKG_ROOT=$(
 declare -r libdir="${PKG_ROOT}/lib"
 declare -r confdir="${PKG_ROOT}/conf"
 declare -r libname='libwild-west'
-declare -r version='1.0.0'
+declare -r jolly_version='1.0.0'
 declare -r BUILDSCRIPT='COWBOY'
 
 if ! . "${libdir}/${libname}.sh"; then
@@ -52,9 +52,11 @@ fi
 # Options
 INFAKEROOT=0
 
+DEBUG=0
+
 # functions
-usage(){
-  printf -- 'Jolly (Lucky Luke) -- %s\n' "${version}"
+__usage(){
+  printf -- 'Jolly (Lucky Luke) -- %s\n' "${jolly_version}"
   printf -- 'Fork of makepkg for a dpkg-based buildsystem.\n'
   echo ####
   printf -- ' -h, --help      Show this help text and exit\n'
@@ -62,8 +64,8 @@ usage(){
   echo ####
 }
 
-version(){
-  printf -- '%s -- %s\n' "${0##*/}" "${version}"
+__version(){
+  printf -- '%s -- %s\n' "${0##*/}" "${jolly_version}"
   cat << EOF
   This is free software; see the source for copying conditions.
   There is NO WARRANTY, to the extent permitted by law.
@@ -84,23 +86,28 @@ enter_fakeroot(){
 umask 0022
 
 ARGV=(${@})
-OPT_SHORT="fFhV"
+OPT_SHORT="fFhp:V"
 OPT_LONG=('foo'
-          'help' 'version')
+          'help' 'version' 'debug')
 
 if ! parseopts "${OPT_SHORT}" "${OPT_LONG[@]}" -- "$@"; then
-  exit ${E_INVALID_OPTiON}
+  exit ${E_INVALID_OPTION}
 fi
 set -- "${OPTRET[@]}"
 unset OPT_SHORT OPT_LONG OPTRET
 
 while (( $# )); do
+  debug "parseopts: ${1}"
   case "${1}" in
     --foo)  echo foo ;;
+    --debug) DEBUG=1 ;;
+
+    # short
+    -p) shift; debug ".. $(echo $@)"; BUILDFILE="${1}" ;;
 
     # - Help
-    -h|--help) usage; exit ${E_OK} ;;
-    -V|--version) version; exit ${E_OK} ;;
+    -h|--help) __usage; exit ${E_OK} ;;
+    -V|--version) __version; exit ${E_OK} ;;
     # - Private
     -F)     INFAKEROOT=1 ;;
 
@@ -122,3 +129,27 @@ done
 if (( ${#extra_environment[*]} )); then
 	export "${extra_environment[@]}"
 fi
+
+source_buildfile() {
+  wildwest 'main/build'
+
+  source "$@"
+}
+
+
+# =
+# start building
+# =
+
+BUILDFILE=${BUILDFILE:-$BUILDSCRIPT}
+
+[[ ! -f ${BUILDFILE} ]] && {
+  error "Missing ${BUILDFILE}"
+  exit ${E_BUILD_ERROR}
+}
+[[ $(<"${BUILDFILE}") = *$'\r'* ]] && {
+  error "CRLF detected in ${BUILDFILE}"
+  exit ${E_BUILD_ERROR}
+}
+
+source_buildfile ${BUILDFILE}

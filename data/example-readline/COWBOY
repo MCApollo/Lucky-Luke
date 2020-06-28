@@ -5,11 +5,12 @@
 # ex. version "1.0.0" will export version=1.0.0 in its function
 
 name "longname" "package-name"
-desc "short-desc" \
-  "I'm the long description" \
-  "I can deal with newlines in the" \
-  "Amount of text and maybe even heredocs" \
-  "This also could be a file named COWBOY.description"
+desc "short-desc" << EOF
+ This is the long description, it works when I do this.
+ da dum da da da dum dum da da da bum bum
+ I think about that day
+EOF
+
 # desc --url "http://cydia.descrip.com/foo"
 version "main-version" "+ patch-level"
 homepage "https://example.com"
@@ -17,10 +18,15 @@ download "https://example.com/foobar-${version}.tar.gz" \
   "http://example.foobar.com/baz.diff"
 # XXX: if test -f $(basename ${url}); then use that
 # options that affect the default behavior
-options --do-extract false --do-patch 0 \
-  --skip-checksum yes
-
+options --extract false --patch 0 \
+  --checksum yes
 icon "https://path/to/online/"
+build_depends "python3" "foobar"
+
+# I'm taking about -dev now, handle it cowboy
+current_package 'dev'
+name "longname (Development)" "another-day-of-sun"
+version "sante fe" "that day+$(envp 'main' 'version')"
 
 # XXX: name, desc, version will have a COWBOY.${var} that can be used instead
 #   for things like auto-updaters, just supply --use-file to these functions
