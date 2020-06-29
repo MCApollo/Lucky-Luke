@@ -32,13 +32,13 @@
 unset CDPATH
 unset GREP_OPTIONS
 
-declare -rx PKG_ROOT=$(
+declare -rx PKG_BASE=$(
   basepath="$(dirname $(realpath ${BASH_SOURCE[0]}))"
   printf -- '%s' "$(dirname ${basepath})"
 )
 
-declare -r libdir="${PKG_ROOT}/lib"
-declare -r confdir="${PKG_ROOT}/conf"
+declare -r libdir="${PKG_BASE}/lib"
+declare -r confdir="${PKG_BASE}/conf"
 declare -r libname='libwild-west'
 declare -r jolly_version='1.0.0'
 declare -r BUILDSCRIPT='COWBOY'
@@ -75,7 +75,6 @@ EOF
 # do_cleanup() { }
 
 enter_fakeroot(){
-  msgline 200
   fakeroot -- bash -$- "${BASH_SOURCE[0]}" -F "${ARGLIST[@]}" || exit $?
 }
 
@@ -130,26 +129,105 @@ if (( ${#extra_environment[*]} )); then
 	export "${extra_environment[@]}"
 fi
 
+# === Pre-Build ===
+export PKG_DEST="${PKG_BASE}/dest/FIXME"
+export PKG_STAT="${PKG_BASE}/stat/FIXME"
+export PKG_WORK="${PKG_BASE}/work/FIXME"
+
+rm -rf "${PKG_DEST}"
+mkdir -p "${PKG_DEST}"
+
+rm -rf "${PKG_STAT}"
+mkdir -p "${PKG_STAT}"
+
+rm -rf "${PKG_WORK}"
+mkdir -p "${PKG_WORK}"
+
+# === Build ====
+
 source_buildfile() {
   wildwest 'main/build'
 
-  source "$@"
+  [[ ! -f ${BUILDFILE} ]] && {
+    error "Missing ${BUILDFILE}"
+    exit ${E_BUILD_ERROR}
+  }
+  [[ $(<"${BUILDFILE}") = *$'\r'* ]] && {
+    error "CRLF detected in ${BUILDFILE}"
+    exit ${E_BUILD_ERROR}
+  }
+
+  cd "${PKG_WORK}"
+  source_safe "$@"
+
+  if ! is_enable 'no-extract'; then
+    wget "$(envp 'main' 'download')"
+    tar xvf *
+  fi
 }
 
+# run_foreach:
+# $1: {build,package,prepare}
+# $2: sub-packages functions
+run_foreach() {
+  local default='main' pkgfunc
+  local what="${1}"; shift
+  local argv=($@)
+
+  while (( $# )); do
+    func="${1:+_$1}"; [[ "${1}" = "${default}" ]] && func=''
+    func="${what}${func}"
+
+    if have_function ${func}; then
+      ${func}
+    else
+      debug "${FUNCNAME[1]}: Missing '${func}' function, skipping."
+    fi
+    shift
+  done
+}
+
+run_prepare(){
+  local self="${FUNCNAME[0]##*_}"
+
+  run_foreach "${self}" "${PKGNAME[@]}"
+}
+
+run_build(){
+  local self="${FUNCNAME[0]##*_}"
+
+  run_foreach "${self}" "${PKGNAME[@]}"
+}
+
+run_package(){
+  local self="${FUNCNAME[0]##*_}"
+
+  # Here, if there's multiple packages defined, it's __required__ to have
+  #   a package function for secondary packages or else there's no point.
+  (( $# != 1 )) && {
+    local i x
+    local default='main'
+    for (( i=0; i<${#PKGNAME[@]}; i++ )); do
+      x=${PKGNAME[${i}]}
+      [[ "${x}" = "${default}" ]] && continue
+
+      if ! have_function "package_${x}"; then
+        error "${FUNCNAME[0]}: Missing a function for '${x}'"
+        exit ${E_BUILD}
+      fi
+    done
+  }
+
+  run_foreach "${self}" "${PKGNAME[@]}"
+}
 
 # =
 # start building
 # =
 
-BUILDFILE=${BUILDFILE:-$BUILDSCRIPT}
+BUILDFILE=$(realpath ${BUILDFILE:-$BUILDSCRIPT})
+source_buildfile "${BUILDFILE}"
 
-[[ ! -f ${BUILDFILE} ]] && {
-  error "Missing ${BUILDFILE}"
-  exit ${E_BUILD_ERROR}
-}
-[[ $(<"${BUILDFILE}") = *$'\r'* ]] && {
-  error "CRLF detected in ${BUILDFILE}"
-  exit ${E_BUILD_ERROR}
-}
-
-source_buildfile ${BUILDFILE}
+run_prepare
+run_build
+run_package

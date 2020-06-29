@@ -1,0 +1,5 @@
+
+
+auto-version
+  Use grep to grab the version.
+  if a argument is supplied, then use that string for grep.

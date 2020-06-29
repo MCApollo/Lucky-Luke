@@ -44,3 +44,11 @@ is_associative() {
 
 	return $ret
 }
+
+have_function() {
+	declare -f "$1" >/dev/null
+}
+
+grep_function() {
+	{ declare -f "$1" || declare -f package; } 2>/dev/null | grep -E "$2"
+}

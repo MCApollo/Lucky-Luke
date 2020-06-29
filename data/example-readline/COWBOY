@@ -28,6 +28,10 @@ current_package 'dev'
 name "longname (Development)" "another-day-of-sun"
 version "sante fe" "that day+$(envp 'main' 'version')"
 
+current_package 'lib'
+name "longname (lib package)" "shame on you"
+version 
+
 # XXX: name, desc, version will have a COWBOY.${var} that can be used instead
 #   for things like auto-updaters, just supply --use-file to these functions
 
@@ -35,7 +39,7 @@ version "sante fe" "that day+$(envp 'main' 'version')"
 #   auto-cd into that dir, bail on error if that fails.
 # prepare is not required
 prepare(){
-  :
+  echo "${FUNCNAME[0]}: $(caller)"
   # do prepare stuff here like pre-compiling for host
   # could call a function from build.d
 }
@@ -44,18 +48,18 @@ prepare(){
 #   the dest_dir, allowing for importing of make.sh
 #
 build(){
-  :
+  echo "${FUNCNAME[0]}: $(caller)"
 }
 
-packge(){
-  :
+package(){
+  echo "${FUNCNAME[0]}: $(caller)"
   # install whatever, your pwd is where build() left off
 }
 
 # create sub-packages, the buildsystem will create a new dest_dir for you
 #   named: ${package-name}-${function-suffix}
 package_dev(){
-  :
+  echo "${FUNCNAME[0]}: $(caller)"
   # install whatever, your pwd is where build() left off
 }
 # XXX: handle sub-depends in /stat directory, keep track when depending

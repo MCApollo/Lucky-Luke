@@ -1,0 +1,27 @@
+#!/hint/bash
+# icon "foobar"
+options --auto-version
+
+name "ncurses six" "ncurses6_0"
+desc "Text-based UI library" << EOF
+  Text-based UI library (ncurses)
+  ncurses does blah blah blah
+  badger badger badger badger
+EOF
+download "https://ftp.gnu.org/gnu/ncurses/ncurses-6.2.tar.gz"
+version "${download}" "foobar" # --auto-version
+build_depends "pkg-config"
+
+prepare() {
+  cd_safe */
+}
+
+build() {
+  echo $PWD
+  ./autogen.sh
+  ./configure
+}
+
+package(){
+  make install DESTDIR=${PKG_DEST}
+}

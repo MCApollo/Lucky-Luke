@@ -10,20 +10,20 @@ export LIBWILDWEST_UTIL_SAFETY_SH=1
 wildwest "util/error"
 wildwest "util/message"
 
-safe_cd(){
+cd_safe(){
   local dir="$@"
   if [[ -z "${dir}" ]]; then
-    ofail "(safe_cd): Caller didn't supply argument ($(caller))" \
+    error "(safe_cd): Caller didn't supply argument ($(caller))" \
       "${E_SAFE}"
   fi
 
   if ! cd "${dir}"; then
-    ofail "(safe_cd): Failed 'cd ${dir}' ($(caller))"  \
+    error "(safe_cd): Failed 'cd ${dir}' ($(caller))"  \
       "${E_SAFE}"
   fi
 }
 
-safe_source(){
+source_safe(){
   local shellopts="$(shopt -p extglob)"
   shopt -u extglob
 

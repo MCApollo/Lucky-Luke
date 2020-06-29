@@ -14,6 +14,8 @@ declare -ax PKGNAME=('main')
 #   this lets the user set extra data about subpackages.
 declare -rx PKGINFO='PKGINFO'
 # => change this variable to change what PKGNAME arrays get called as
+declare -xa PKGOPTIONS=()
+# => array of compile time options
 
 # get_current_package:
 # Return the first member in the array
@@ -66,7 +68,7 @@ register_value() {
   declare -n value=${caller}  # -n == copy ${!caller}
   [[ "${caller}" == "main" ]] &&  \
     error "${FUNCNAME[0]}: Main called? ($(caller))" ${E_INTERNAL}
-  [[ -z "${value+x}" ]] && \
+  [[ -z "${value}" ]] && \
     warning "${FUNCNAME[0]}: WARNING: No value set for '${FUNCNAME[1]}'."
 
   is_array ${caller} && value="${value[@]}"
@@ -78,23 +80,48 @@ register_value() {
   # => FIXME: Use of eval because declare refuses to continue with -Axg normaly
 }
 
+# is_enable:
+# check if option is enable
+# $1: option
+is_enable() {
+  error "$(caller) $(echo ${PKGOPTIONS[@]})"
+  local ret=1
+  local arg="${1}"
+
+  in_array "${arg}" "${PKGOPTIONS[@]}" && ret=0
+  return ${ret}
+}
+
 # options:
 # Affect how to build the package
 options(){
   local ARGV=(${@})
-  local OPT_SHORT=()
-  local OPT_LONG=('extract' 'patch' 'checksum')
+  local OPT_SHORT=() # not used
+  local OPT_LONG=('no-extract' 'no-patch' 'no-checksum'
+                  'auto-version')
   # => Parseopts
   local argv0="$0"
   BASH_ARGV0="${FUNCNAME[0]^}"
-  # => Change ${0} in bash 5 for fun
+  # => Change ${0} in bash 5 for parseopts to avoid confusing users.
   if ! parseopts "${OPT_SHORT}" "${OPT_LONG[@]}" -- "$@"; then
     error "${FUNCNAME[0]}: unable to parseopts ($(caller))"
     exit ${E_INVALID_OPTION}
   fi
   set -- "${OPTRET[@]}"
   BASH_ARGV0="${argv0}"
+  # Require that option is the first thing to be called
+  if declare -p "${PKGINFO}_main" &>/dev/null; then
+    warning "${FUNCNAME[0]} requires be called first in the ${BUILDSCRIPT:-buildscript} ($(caller))"
+  fi
   # And lastly commit the options to the build-runner
+  local arg
+  while (( $# )); do
+    arg="${1##--}"; [[ -z "${arg}" ]] && break
+    # => strip --, if blank (EOF); break
+
+    export PKGOPTIONS+=("${arg}")
+    shift
+  done
 }
 
 #
@@ -120,6 +147,20 @@ pkgname(){
 version() {
   declare -g version="$1"; shift
   (( $# )) && revision "${@//\ }"
+
+  is_enable "auto-version" && {
+    local download="${version:-$(envp_c 'download')}"
+    declare -g version=$(
+      local result
+      local regex="([0-9]{1,}\.)+[0-9]{1,}"
+      result="$(printf -- "${download##*/}" | grep -Eo ${regex})"
+      [[ -z "${result}" ]] && {
+        result="$(printf -- "${download}" | grep -Eo ${regex})"
+      } # First try the basename of the url, then the full url if empty.
+
+      printf -- '%s' "${result}"
+    )
+  }
 
   register_value
 }

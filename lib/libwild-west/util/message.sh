@@ -32,6 +32,7 @@ colorize() {
 		GREEN="${BOLD}$(tput setaf 2)"
 		RED="${BOLD}$(tput setaf 1)"
 		YELLOW="${BOLD}$(tput setaf 3)"
+		UNDERLINE="$(tput smul)$(tput dim)"
 	else
 		ALL_OFF="\e[0m"
 		BOLD="\e[1m"
@@ -39,8 +40,9 @@ colorize() {
 		GREEN="${BOLD}\e[32m"
 		RED="${BOLD}\e[31m"
 		YELLOW="${BOLD}\e[33m"
+		UNDERLINE=""
 	fi
-	readonly ALL_OFF BOLD BLUE GREEN RED YELLOW
+	readonly ALL_OFF BOLD BLUE GREEN RED YELLOW UNDERLINE
 }
 
 [[ -t 2 ]] && colorize
@@ -75,7 +77,7 @@ debug() {
 	(( ! DEBUG )) && return
 	local mesg=$1; shift
 	local who=${FUNCNAME[2]:-'main'}
-	printf "${RED}(DEBUG|${who})${ALL_OFF}:${BOLD} ${mesg}${ALL_OFF}\n" "$@"
+	printf "${RED}${UNDERLINE}(DEBUG|${who}${RED})${ALL_OFF}:${BOLD} ${mesg}${ALL_OFF}\n" "$@"
 }
 
 ask() {
