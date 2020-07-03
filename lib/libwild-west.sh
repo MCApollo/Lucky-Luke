@@ -38,6 +38,7 @@ wildwest(){
 }; export -f wildwest
 
 shellopts=$(shopt -p)
+setopts="$-"
 shopt -s extglob nullglob
 set -e
 (( wildwestdebug )) && set -x
@@ -47,6 +48,7 @@ for file in "${LIBWILDWEST}"/*.sh; do
   (( wildwestdebug )) && printf -- '(debug) %s: sourcing %s\n'  \
     "${LIBWILDWEST##*/}" "${file##*/}"
 done; unset file
-(( wildwestdebug )) && set +x
-eval "${shellopts}"; unset shellopts
-set +x
+
+eval "${shellopts}"
+set "${setopts}"
+unset shellopts setopts
