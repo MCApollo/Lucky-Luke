@@ -84,7 +84,6 @@ register_value() {
 # check if option is enable
 # $1: option
 is_enable() {
-  error "$(caller) $(echo ${PKGOPTIONS[@]})"
   local ret=1
   local arg="${1}"
 

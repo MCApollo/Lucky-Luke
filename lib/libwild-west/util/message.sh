@@ -57,6 +57,21 @@ plain() {
 	printf "${BOLD}    ${mesg}${ALL_OFF}\n" "$@"
 }
 
+plainline() {
+	(( QUIET )) && return
+	command -v 'tput' &>/dev/null || {
+		printf '\n'
+		return
+	}
+	local color="$(tput setab ${1:-'4'})"	# default to blue
+	local cols="$(tput cols)"
+	local dim="$(tput dim)"
+	# [[ -z "${cols}" ]] && read _ cols < <(stty size)
+
+	printf -- "${dim}${color}%${cols}s${ALL_OFF}\n"
+
+}
+
 plainerr() {
 	plain "$@" >&2
 }
